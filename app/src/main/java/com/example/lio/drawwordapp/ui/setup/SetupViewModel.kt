@@ -112,7 +112,7 @@ class SetupViewModel @Inject constructor(
 
     fun joinRoom(username: String, roomName: String) {
         viewModelScope.launch (dispatchers.main) {
-            val result = repository.joinRoom(roomName)
+            val result = repository.joinRoom(username, roomName)
             if(result is Resource.Success) {
                 _setupEvent.emit(SetupEvent.JoinRoomEvent(roomName))
             } else {

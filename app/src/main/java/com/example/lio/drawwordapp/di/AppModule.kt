@@ -2,6 +2,8 @@ package com.example.lio.drawwordapp.di
 
 import android.content.Context
 import com.example.lio.drawwordapp.data.remote.api.SetupApi
+import com.example.lio.drawwordapp.repository.DefaultSetupRepository
+import com.example.lio.drawwordapp.repository.SetupRepository
 import com.example.lio.drawwordapp.util.Constants.HTTP_BASE_URL
 import com.example.lio.drawwordapp.util.Constants.HTTP_BASE_URL_LOCALHOST
 import com.example.lio.drawwordapp.util.Constants.USE_LOCALHOST
@@ -33,6 +35,13 @@ object AppModule {
             })
             .build()
     }
+
+    @Singleton
+    @Provides
+    fun provideSetupRepository(
+        setupApi: SetupApi,
+        @ApplicationContext context: Context
+    ): SetupRepository = DefaultSetupRepository(setupApi, context)
 
     @Singleton
     @Provides
