@@ -8,6 +8,8 @@ import com.example.lio.drawwordapp.util.Constants.HTTP_BASE_URL
 import com.example.lio.drawwordapp.util.Constants.HTTP_BASE_URL_LOCALHOST
 import com.example.lio.drawwordapp.util.Constants.USE_LOCALHOST
 import com.example.lio.drawwordapp.util.DispatcherProvider
+import com.example.lio.drawwordapp.util.clientId
+import com.example.lio.drawwordapp.util.datastore
 import com.google.gson.Gson
 import dagger.Module
 import dagger.Provides
@@ -16,6 +18,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -28,12 +31,29 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(clientId: String): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val url = chain.request().url.newBuilder()
+                    .addQueryParameter("client_id", clientId)
+                    .build()
+                val request = chain.request().newBuilder()
+                    .url(url)
+                    .build()
+                chain.proceed(request)
+            }
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
             .build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideClientId(@ApplicationContext context: Context): String {
+        return runBlocking {
+            context.datastore.clientId()
+        }
     }
 
     @Singleton
@@ -59,7 +79,7 @@ object AppModule {
     @Provides
     fun provideSetupApi(okHttpClient: OkHttpClient): SetupApi {
         return Retrofit.Builder()
-            .baseUrl(if(USE_LOCALHOST) HTTP_BASE_URL_LOCALHOST else HTTP_BASE_URL)
+            .baseUrl(if (USE_LOCALHOST) HTTP_BASE_URL_LOCALHOST else HTTP_BASE_URL)
             .addConverterFactory(GsonConverterFactory.create())
             .client(okHttpClient)
             .build()
