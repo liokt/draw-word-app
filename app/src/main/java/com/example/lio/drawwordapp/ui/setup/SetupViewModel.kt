@@ -40,7 +40,7 @@ class SetupViewModel @Inject constructor(
         object GetRoomLoadingEvent: SetupEvent()
         object GetRoomEmptyEvent: SetupEvent()
 
-        data class JoinRoomEvent(val username: String): SetupEvent()
+        data class JoinRoomEvent(val roomName: String): SetupEvent()
         data class JoinRoomErrorEvent(val error: String): SetupEvent()
 
     }
@@ -104,7 +104,7 @@ class SetupViewModel @Inject constructor(
                 //We set the rooms value each time for configuration changes
                 _rooms.value = (SetupEvent.GetRoomEvent(result.data ?: return@launch))
             } else {
-                //We eant to set the rooms value one time only (we use "emit")
+                //We want to set the rooms value one time only (we use "emit")
                 _setupEvent.emit(SetupEvent.GetRoomErrorEvent(result.message ?: return@launch))
             }
         }
