@@ -19,7 +19,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class SetupViewModel @Inject constructor(
+class CreateRoomViewModel @Inject constructor(
     private val repository: SetupRepository,
     private val dispatchers:  DispatcherProvider
 ): ViewModel() {
@@ -33,13 +33,6 @@ class SetupViewModel @Inject constructor(
         data class CreateRoomEvent(val room: Room): SetupEvent()
         data class CreateRoomErrorEvent(val error: String): SetupEvent()
 
-        data class NavigateToSelectRoomEvent(val username: String): SetupEvent()
-
-        data class GetRoomEvent(val rooms: List<Room>): SetupEvent()
-        data class GetRoomErrorEvent(val error: String): SetupEvent()
-        object GetRoomLoadingEvent: SetupEvent()
-        object GetRoomEmptyEvent: SetupEvent()
-
         data class JoinRoomEvent(val roomName: String): SetupEvent()
         data class JoinRoomErrorEvent(val error: String): SetupEvent()
 
@@ -47,27 +40,6 @@ class SetupViewModel @Inject constructor(
 
     private val _setupEvent = MutableSharedFlow<SetupEvent>()
     val setupEvent: SharedFlow<SetupEvent> = _setupEvent
-
-    private val _rooms = MutableStateFlow<SetupEvent>(SetupEvent.GetRoomEmptyEvent)
-    val rooms: StateFlow<SetupEvent> = _rooms
-
-    fun validateUserNameAndNavigateToSelectRoom(username: String){
-        viewModelScope.launch (dispatchers.main) {
-            val trimmedUserName = username.trim()
-            when {
-                trimmedUserName.isEmpty() -> {
-                    _setupEvent.emit(SetupEvent.InputEmptyError)
-                }
-                trimmedUserName.length < MIN_USERNAME_LENGTH -> {
-                    _setupEvent.emit(SetupEvent.InputTooShortError)
-                }
-                trimmedUserName.length > MAX_USERNAME_LENGTH -> {
-                    _setupEvent.emit(SetupEvent.InputTooLongError)
-                }
-                else -> _setupEvent.emit(SetupEvent.NavigateToSelectRoomEvent(username))
-            }
-        }
-    }
 
     fun createRoom(room: Room) {
         viewModelScope.launch(dispatchers.main) {
@@ -92,20 +64,6 @@ class SetupViewModel @Inject constructor(
                         ))
                     }
                 }
-            }
-        }
-    }
-
-    fun getRooms(searchQuery: String) {
-        _rooms.value = SetupEvent.GetRoomLoadingEvent
-        viewModelScope.launch (dispatchers.main) {
-            val result = repository.getRooms(searchQuery)
-            if(result is Resource.Success) {
-                //We set the rooms value each time for configuration changes
-                _rooms.value = (SetupEvent.GetRoomEvent(result.data ?: return@launch))
-            } else {
-                //We want to set the rooms value one time only (we use "emit")
-                _setupEvent.emit(SetupEvent.GetRoomErrorEvent(result.message ?: return@launch))
             }
         }
     }

@@ -3,12 +3,12 @@ package com.example.lio.drawwordapp.ui.setup.fragments
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.lio.drawwordapp.R
 import com.example.lio.drawwordapp.databinding.FragmentUsernameBinding
-import com.example.lio.drawwordapp.ui.setup.SetupViewModel
+import com.example.lio.drawwordapp.ui.setup.UsernameViewModel
 import com.example.lio.drawwordapp.util.Constants.MAX_USERNAME_LENGTH
 import com.example.lio.drawwordapp.util.Constants.MIN_USERNAME_LENGTH
 import com.example.lio.drawwordapp.util.navigateSafely
@@ -23,7 +23,7 @@ class UserNameFragment: Fragment(R.layout.fragment_username) {
     private val binding: FragmentUsernameBinding
         get() = _binding!!
 
-    private val viewModel: SetupViewModel by activityViewModels()
+    private val viewModel: UsernameViewModel by viewModels()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -41,19 +41,19 @@ class UserNameFragment: Fragment(R.layout.fragment_username) {
         lifecycleScope.launchWhenStarted {
             viewModel.setupEvent.collect { event ->
                 when(event) {
-                    is SetupViewModel.SetupEvent.NavigateToSelectRoomEvent -> {
+                    is UsernameViewModel.SetupEvent.NavigateToSelectRoomEvent -> {
                         findNavController().navigateSafely(
                           R.id.action_userNameFragment_to_selectRoomFragment,
                             args = Bundle().apply { putString("username", event.username) }
                         )
                     }
-                    is SetupViewModel.SetupEvent.InputEmptyError -> {
+                    is UsernameViewModel.SetupEvent.InputEmptyError -> {
                         snackbar(R.string.error_field_empty)
                     }
-                    is SetupViewModel.SetupEvent.InputTooShortError -> {
+                    is UsernameViewModel.SetupEvent.InputTooShortError -> {
                         snackbar(getString(R.string.error_username_too_short, MIN_USERNAME_LENGTH))
                     }
-                    is SetupViewModel.SetupEvent.InputTooLongError -> {
+                    is UsernameViewModel.SetupEvent.InputTooLongError -> {
                         snackbar(getString(R.string.error_username_too_long, MAX_USERNAME_LENGTH))
                     }
                     else -> Unit
