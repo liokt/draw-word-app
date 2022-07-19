@@ -16,7 +16,7 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DrawingVIewModel @Inject constructor(
+class DrawingViewModel @Inject constructor(
     private val drawingApi: DrawingApi,
     private val dispatchers: DispatcherProvider,
     private val gson: Gson
@@ -36,18 +36,37 @@ class DrawingVIewModel @Inject constructor(
     private val _selectColorButtonId = MutableStateFlow(R.id.rbBlack)
     val selectedColorButtonId: StateFlow<Int> = _selectColorButtonId
 
+    private val _connectionProgressBarVisible = MutableStateFlow(true)
+    val connectionProgressBarVisible: StateFlow<Boolean> = _connectionProgressBarVisible
+
+    private val _chooseWordsOverlayVisible = MutableStateFlow(false)
+    val chooseWordsOverlayVisible: StateFlow<Boolean> = _chooseWordsOverlayVisible
+
     //Channel where we sent connections events messages
     private val connectionEventChannel = Channel<WebSocket.Event>()
     val connectionEvent = connectionEventChannel.receiveAsFlow().flowOn(dispatchers.io)
 
     private val socketsEventChannel = Channel<SocketEvent>()
-    val socketEvent = connectionEventChannel.receiveAsFlow().flowOn(dispatchers.io)
+    val socketEvent = socketsEventChannel.receiveAsFlow().flowOn(dispatchers.io)
+
+    init {
+        observeBaseModels()
+        observeEvents()
+    }
+
+    fun setChooseOverlayVisibility(isVisible: Boolean) {
+        _chooseWordsOverlayVisible.value = isVisible
+    }
+
+    fun setConnectionProgressBarVisibility(isVisible: Boolean) {
+        _connectionProgressBarVisible.value = isVisible
+    }
 
     fun checkRadioButton(id: Int) {
         _selectColorButtonId.value = id
     }
 
-    fun observeEvents() {
+    private fun observeEvents() {
         viewModelScope.launch(dispatchers.io) {
             drawingApi.observeEvents().collect { event ->
                 connectionEventChannel.send(event)
@@ -55,7 +74,7 @@ class DrawingVIewModel @Inject constructor(
         }
     }
 
-    fun observeBaseModels() {
+    private fun observeBaseModels() {
         viewModelScope.launch(dispatchers.io) {
             drawingApi.observeBaseModels().collect { data ->
                 when(data) {
@@ -67,6 +86,7 @@ class DrawingVIewModel @Inject constructor(
                             ACTION_UNDO -> socketsEventChannel.send((SocketEvent.UndoEvent))
                         }
                     }
+                    is GameError -> socketsEventChannel.send(SocketEvent.GameErrorEvent(data))
                     is Ping -> sendBaseModel(Ping())
                 }
             }
