@@ -15,6 +15,7 @@ import com.example.lio.drawwordapp.data.remote.ws.Room
 import com.example.lio.drawwordapp.databinding.FragmentCreateRoomBinding
 import com.example.lio.drawwordapp.ui.setup.CreateRoomViewModel
 import com.example.lio.drawwordapp.util.Constants
+import com.example.lio.drawwordapp.util.hideKeyboard
 import com.example.lio.drawwordapp.util.navigateSafely
 import com.example.lio.drawwordapp.util.snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,6 +43,7 @@ class CreateRoomFragment: Fragment(R.layout.fragment_create_room) {
             viewModel.createRoom(
                 Room(binding.etRoomName.text.toString(), binding.tvMaxPersons.text.toString().toInt())
             )
+            requireActivity().hideKeyboard(binding.root)
         }
     }
 

@@ -11,6 +11,7 @@ import com.example.lio.drawwordapp.databinding.FragmentUsernameBinding
 import com.example.lio.drawwordapp.ui.setup.UsernameViewModel
 import com.example.lio.drawwordapp.util.Constants.MAX_USERNAME_LENGTH
 import com.example.lio.drawwordapp.util.Constants.MIN_USERNAME_LENGTH
+import com.example.lio.drawwordapp.util.hideKeyboard
 import com.example.lio.drawwordapp.util.navigateSafely
 import com.example.lio.drawwordapp.util.snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,6 +35,7 @@ class UserNameFragment: Fragment(R.layout.fragment_username) {
             viewModel.validateUserNameAndNavigateToSelectRoom(
                 binding.etUsername.text.toString()
             )
+            requireActivity().hideKeyboard(binding.root)
         }
     }
 

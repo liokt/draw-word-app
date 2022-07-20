@@ -22,6 +22,7 @@ import com.example.lio.drawwordapp.data.remote.ws.models.*
 import com.example.lio.drawwordapp.databinding.ActivityDrawingBinding
 import com.example.lio.drawwordapp.ui.setup.drawing.DrawingViewModel.*
 import com.example.lio.drawwordapp.util.Constants
+import com.example.lio.drawwordapp.util.hideKeyboard
 import com.google.android.material.snackbar.Snackbar
 import com.tinder.scarlet.WebSocket
 import dagger.hilt.android.AndroidEntryPoint
@@ -101,6 +102,7 @@ class DrawingActivity : AppCompatActivity() {
                 )
             )
             binding.etMessage.text?.clear()
+            hideKeyboard(binding.root)
         }
 
         binding.ibUndo.setOnClickListener {
