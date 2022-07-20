@@ -145,6 +145,7 @@ class DrawingView @JvmOverloads constructor(
 
     fun undo() {
         if(paths.isNotEmpty()) {
+            paths.pop()
             pathDataChangeListener?.let { change ->
                 change(paths)
             }
@@ -178,7 +179,7 @@ class DrawingView @JvmOverloads constructor(
             change(paths)
         }
         onDrawListener?.let { draw ->
-            val drawData = createDrawData(curX!!, curY!!, curX!!, curY!!, ACTION_MOVE)
+            val drawData = createDrawData(curX!!, curY!!, curX!!, curY!!, ACTION_UP)
             draw(drawData)
         }
         path = Path()
