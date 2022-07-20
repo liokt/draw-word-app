@@ -38,6 +38,8 @@ class DrawingView @JvmOverloads constructor(
     private var paths = Stack<PathData>()
     private var pathDataChangeListener: ((Stack<PathData>) -> Unit)? = null
 
+    private var startedTouch = false
+
     var roomName: String? = null
     var isUserDrawing = false
     set(value) {
@@ -95,6 +97,61 @@ class DrawingView @JvmOverloads constructor(
         invalidate()
     }
 
+    fun startedTouchExternally(drawData: DrawData) {
+        parseDrawData(drawData).apply {
+            paint.color = color
+            paint.strokeWidth = thickness
+            path.reset()
+            path.moveTo(fromX, fromY)
+            invalidate()
+            startedTouch = true
+        }
+    }
+
+    fun movedTouchExternally(drawData: DrawData) {
+        parseDrawData(drawData).apply {
+            val dx = abs(toX - fromX)
+            val dy = abs(toY - fromY)
+            if(!startedTouch) {
+                //Prevent a bug where in some cases ACTION_MOVE is called before ACTION_DOWN
+                startedTouchExternally(drawData)
+            }
+            if(dx >= smoothless || dy >= smoothless) {
+                path.quadTo(fromX, fromY, (fromX + toX) / 2f, (fromY + toY) / 2f)
+                invalidate()
+            }
+        }
+    }
+
+    fun releasedTouchExternally(drawData: DrawData){
+        parseDrawData(drawData).apply {
+            path.lineTo(fromX, fromY)
+            canvas?.drawPath(path, paint)
+            paths.push(PathData(path, paint.color, paint.strokeWidth))
+            pathDataChangeListener?.let { change ->
+                change(paths)
+            }
+        }
+        path = Path()
+        invalidate()
+        startedTouch = false
+    }
+
+    override fun setEnabled(enabled: Boolean) {
+        super.setEnabled(enabled)
+        path.reset()
+        invalidate()
+    }
+
+    fun undo() {
+        if(paths.isNotEmpty()) {
+            pathDataChangeListener?.let { change ->
+                change(paths)
+            }
+            invalidate()
+        }
+    }
+
     private fun movedTouch(toX: Float, toY: Float){
         val dx = abs(toX - (curX ?: return))
         val dy = abs(toY - (curY ?: return))
@@ -140,6 +197,15 @@ class DrawingView @JvmOverloads constructor(
             ACTION_UP -> releasedTouch()
         }
         return true
+    }
+
+    private fun parseDrawData(drawData: DrawData): DrawData {
+        return drawData.copy(
+            fromX = drawData.fromX * viewWidth!!,
+            fromY = drawData.fromY * viewHeight!!,
+            toX = drawData.toX * viewWidth!!,
+            toY = drawData.toY * viewHeight!!
+        )
     }
 
     private fun createDrawData(

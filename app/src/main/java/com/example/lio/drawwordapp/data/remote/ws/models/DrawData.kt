@@ -1,6 +1,5 @@
 package com.example.lio.drawwordapp.data.remote.ws.models
 
-import com.example.lio.drawwordapp.data.remote.ws.models.BaseModel
 import com.example.lio.drawwordapp.util.Constants.TYPE_DRAW_DATA
 
 data class DrawData(
