@@ -25,6 +25,7 @@ class DrawingViewModel @Inject constructor(
     sealed class SocketEvent {
         data class ChatMessageEvent(val data: ChatMessage): SocketEvent()
         data class AnnouncementEvent(val data: Announcement): SocketEvent()
+        data class ChosenWordEvent(val data: ChosenWord): SocketEvent()
         data class GameStateEvent(val data: GameState): SocketEvent()
         data class DrawDataEvent(val data: DrawData): SocketEvent()
         data class NewWordsEvent(val data: NewWords): SocketEvent()
@@ -32,6 +33,9 @@ class DrawingViewModel @Inject constructor(
         data class RoundDrawInfoEvent(val data: RoundDrawInfo): SocketEvent()
         object UndoEvent: SocketEvent()
     }
+
+    private val _newWords = MutableStateFlow(NewWords(listOf()))
+    val newWords: StateFlow<NewWords> = _newWords
 
     private val _chat = MutableStateFlow<List<BaseModel>>(listOf())
     val chat: StateFlow<List<BaseModel>> = _chat
@@ -90,6 +94,13 @@ class DrawingViewModel @Inject constructor(
                     is Announcement -> {
                         socketsEventChannel.send(SocketEvent.AnnouncementEvent(data))
                     }
+                    is ChosenWord -> {
+                        socketsEventChannel.send(SocketEvent.ChosenWordEvent(data))
+                    }
+                    is NewWords -> {
+                        _newWords.value = data
+                        socketsEventChannel.send(SocketEvent.NewWordsEvent(data))
+                    }
                     is DrawAction -> {
                         when(data.action) {
                             ACTION_UNDO -> socketsEventChannel.send((SocketEvent.UndoEvent))
@@ -101,6 +112,12 @@ class DrawingViewModel @Inject constructor(
             }
         }
     }
+
+    fun chooseWord(word: String, roomName: String) {
+        val chosenWord = ChosenWord(word, roomName)
+        sendBaseModel(chosenWord)
+    }
+
 
     fun sendChatMessage(message: ChatMessage) {
         if (message.message.trim().isEmpty()) {
