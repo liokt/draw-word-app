@@ -7,6 +7,7 @@ import com.example.lio.drawwordapp.data.remote.ws.DrawingApi
 import com.example.lio.drawwordapp.data.remote.ws.Room
 import com.example.lio.drawwordapp.data.remote.ws.models.*
 import com.example.lio.drawwordapp.data.remote.ws.models.DrawAction.Companion.ACTION_UNDO
+import com.example.lio.drawwordapp.ui.views.DrawingView
 import com.example.lio.drawwordapp.util.CoroutineTimer
 import com.example.lio.drawwordapp.util.DispatcherProvider
 import com.google.gson.Gson
@@ -16,6 +17,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -37,6 +39,9 @@ class DrawingViewModel @Inject constructor(
         object UndoEvent: SocketEvent()
     }
 
+    private val _pathData = MutableStateFlow(Stack<DrawingView.PathData>())
+    val pathData: StateFlow<Stack<DrawingView.PathData>> = _pathData
+
     private val _newWords = MutableStateFlow(NewWords(listOf()))
     val newWords: StateFlow<NewWords> = _newWords
 
@@ -45,6 +50,9 @@ class DrawingViewModel @Inject constructor(
 
     private val _phaseTime = MutableStateFlow(0L)
     val phaseTime: StateFlow<Long> = _phaseTime
+
+    private val _gameState = MutableStateFlow(GameState("",""))
+    val gameState: StateFlow<GameState> = _gameState
 
     private val _chat = MutableStateFlow<List<BaseModel>>(listOf())
     val chat: StateFlow<List<BaseModel>> = _chat
@@ -82,6 +90,10 @@ class DrawingViewModel @Inject constructor(
 
     fun cancelTimer() {
         timerJob?.cancel()
+    }
+
+    fun setPathData(stack: Stack<DrawingView.PathData>) {
+        _pathData.value = stack
     }
 
     fun setChooseOverlayVisibility(isVisible: Boolean) {
@@ -128,6 +140,10 @@ class DrawingViewModel @Inject constructor(
                         when(data.action) {
                             ACTION_UNDO -> socketsEventChannel.send((SocketEvent.UndoEvent))
                         }
+                    }
+                    is GameState -> {
+                        _gameState.value = data
+                        socketsEventChannel.send(SocketEvent.GameStateEvent(data))
                     }
                     is PhaseChange -> {
                         data.phase?.let {
