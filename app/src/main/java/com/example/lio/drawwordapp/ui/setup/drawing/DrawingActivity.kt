@@ -18,6 +18,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lio.drawwordapp.R
 import com.example.lio.drawwordapp.adapters.ChatMessageAdapter
+import com.example.lio.drawwordapp.adapters.PlayerAdapter
 import com.example.lio.drawwordapp.data.remote.ws.Room
 import com.example.lio.drawwordapp.data.remote.ws.models.*
 import com.example.lio.drawwordapp.databinding.ActivityDrawingBinding
@@ -49,6 +50,9 @@ class DrawingActivity : AppCompatActivity() {
 
     private var updateChatJob: Job? = null
 
+    @Inject
+    private lateinit var playerAdapter: PlayerAdapter
+
     private lateinit var chatMessageAdapter: ChatMessageAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,6 +74,12 @@ class DrawingActivity : AppCompatActivity() {
 
         val header = layoutInflater.inflate(R.layout.nav_drawer_header, binding.navView)
         rvPlayers = header.findViewById(R.id.rvPlayers)
+
+        rvPlayers.apply {
+            adapter = playerAdapter
+            layoutManager = LinearLayoutManager(this@DrawingActivity)
+        }
+
         binding.root.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED)
 
         binding.ibPlayers.setOnClickListener {
