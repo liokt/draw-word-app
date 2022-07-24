@@ -49,9 +49,10 @@ class DrawingActivity : AppCompatActivity() {
     private lateinit var rvPlayers: RecyclerView
 
     private var updateChatJob: Job? = null
+    private var updatePlayerListJob: Job? = null
 
     @Inject
-    private lateinit var playerAdapter: PlayerAdapter
+    lateinit var playerAdapter: PlayerAdapter
 
     private lateinit var chatMessageAdapter: ChatMessageAdapter
 
@@ -282,7 +283,11 @@ class DrawingActivity : AppCompatActivity() {
                 binding.chooseWordOverlay.isVisible = isVisible
             }
         }
-
+        lifecycleScope.launchWhenStarted {
+            viewModel.players.collect { players ->
+                updatePlayersList(players)
+            }
+        }
     }
 
     private fun listenToSocketEvents() = lifecycleScope.launchWhenStarted {
@@ -355,6 +360,13 @@ class DrawingActivity : AppCompatActivity() {
                 }
                 else -> Unit
             }
+        }
+    }
+
+    private fun updatePlayersList(players: List<PlayerData>) {
+        updatePlayerListJob?.cancel()
+        updatePlayerListJob = lifecycleScope.launch {
+            playerAdapter.updateDataset(players)
         }
     }
 

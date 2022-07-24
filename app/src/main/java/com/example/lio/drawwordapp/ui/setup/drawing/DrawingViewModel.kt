@@ -45,6 +45,9 @@ class DrawingViewModel @Inject constructor(
     private val _newWords = MutableStateFlow(NewWords(listOf()))
     val newWords: StateFlow<NewWords> = _newWords
 
+    private val _players = MutableStateFlow<List<PlayerData>>(listOf())
+    val players: StateFlow<List<PlayerData>> = _players
+
     private val _phase = MutableStateFlow(PhaseChange(null, 0L, null))
     val phase: StateFlow<PhaseChange> = _phase
 
@@ -140,6 +143,9 @@ class DrawingViewModel @Inject constructor(
                         when(data.action) {
                             ACTION_UNDO -> socketsEventChannel.send((SocketEvent.UndoEvent))
                         }
+                    }
+                    is PLayersList -> {
+                        _players.value = data.players
                     }
                     is GameState -> {
                         _gameState.value = data
