@@ -1,10 +1,13 @@
 package com.example.lio.drawwordapp.ui.setup.drawing
 
+import android.Manifest
+import android.Manifest.permission.RECORD_AUDIO
 import android.graphics.Color
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AppCompatActivity
@@ -32,11 +35,16 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import pub.devrel.easypermissions.AppSettingsDialog
+import pub.devrel.easypermissions.EasyPermissions
 import java.util.*
 import javax.inject.Inject
 
+private const val REQUEST_CODE_RECORD_AUDIO = 1
+
 @AndroidEntryPoint
-class DrawingActivity : AppCompatActivity(), LifecycleObserver {
+class DrawingActivity : AppCompatActivity(), LifecycleObserver,
+    EasyPermissions.PermissionCallbacks {
 
     private lateinit var binding: ActivityDrawingBinding
     private val viewModel: DrawingViewModel by viewModels()
@@ -90,7 +98,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
             binding.root.openDrawer(GravityCompat.START)
         }
 
-        binding.root.addDrawerListener(object : DrawerLayout.DrawerListener{
+        binding.root.addDrawerListener(object : DrawerLayout.DrawerListener {
             override fun onDrawerSlide(drawerView: View, slideOffset: Float) = Unit
 
             override fun onDrawerOpened(drawerView: View) = Unit
@@ -120,7 +128,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
         }
 
         binding.ibUndo.setOnClickListener {
-            if(binding.drawingView.isUserDrawing) {
+            if (binding.drawingView.isUserDrawing) {
                 binding.drawingView.undo()
                 viewModel.sendBaseModel(DrawAction(DrawAction.ACTION_UNDO))
             }
@@ -135,13 +143,13 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
         }
 
         binding.drawingView.setOnDrawListener {
-            if(binding.drawingView.isUserDrawing) {
+            if (binding.drawingView.isUserDrawing) {
                 viewModel.sendBaseModel(it)
             }
         }
     }
 
-    private fun setColorGroupVisibility(isVisible: Boolean){
+    private fun setColorGroupVisibility(isVisible: Boolean) {
         binding.colorGroup.isVisible = isVisible
         binding.ibUndo.isVisible = isVisible
     }
@@ -155,15 +163,15 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
         }
     }
 
-    private fun selectColor(color: Int){
+    private fun selectColor(color: Int) {
         binding.drawingView.setColor(color)
         binding.drawingView.setThickness(Constants.DEFAULT_PAINT_THICKNESS)
     }
 
-    private fun subscribeToUIStateUpdates(){
+    private fun subscribeToUIStateUpdates() {
         lifecycleScope.launchWhenStarted {
             viewModel.chat.collect { chat ->
-                if(chatMessageAdapter.chatObjects.isEmpty()) {
+                if (chatMessageAdapter.chatObjects.isEmpty()) {
                     updateChatMessagesList(chat)
                 }
             }
@@ -171,7 +179,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
         lifecycleScope.launchWhenStarted {
             viewModel.newWords.collect {
                 val newWords = it.newWords
-                if(newWords.isEmpty()) {
+                if (newWords.isEmpty()) {
                     return@collect
                 }
                 binding.apply {
@@ -194,13 +202,18 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
             }
         }
         lifecycleScope.launchWhenStarted {
-            viewModel.selectedColorButtonId.collect {id ->
+            viewModel.selectedColorButtonId.collect { id ->
                 binding.colorGroup.check(id)
-                when(id) {
+                when (id) {
                     R.id.rbBlack -> selectColor(Color.BLACK)
                     R.id.rbBlue -> selectColor(Color.BLUE)
                     R.id.rbGreen -> selectColor(Color.GREEN)
-                    R.id.rbOrange -> selectColor(ContextCompat.getColor(this@DrawingActivity, R.color.orange))
+                    R.id.rbOrange -> selectColor(
+                        ContextCompat.getColor(
+                            this@DrawingActivity,
+                            R.color.orange
+                        )
+                    )
                     R.id.rbRed -> selectColor(Color.RED)
                     R.id.rbYellow -> selectColor(Color.YELLOW)
                     R.id.rbEraser -> {
@@ -232,7 +245,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
         }
         lifecycleScope.launchWhenStarted {
             viewModel.phase.collect { phase ->
-                when(phase.phase) {
+                when (phase.phase) {
                     Room.Phase.WAITING_FOR_PLAYERS -> {
                         binding.tvCurWord.text = getString(R.string.waiting_for_players)
                         viewModel.cancelTimer()
@@ -244,7 +257,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
                         binding.tvCurWord.text = getString(R.string.waiting_for_start)
                     }
                     Room.Phase.NEW_ROUND -> {
-                        phase.drawingPlayer?.let {player ->
+                        phase.drawingPlayer?.let { player ->
                             binding.tvCurWord.text = getString(R.string.player_is_drawing, player)
                         }
                         binding.apply {
@@ -262,7 +275,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
                     }
                     Room.Phase.SHOW_WORD -> {
                         binding.apply {
-                            if(drawingView.isDrawing) {
+                            if (drawingView.isDrawing) {
                                 drawingView.finishOffDrawing()
                             }
                             drawingView.isEnabled = false
@@ -294,11 +307,11 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
 
     private fun listenToSocketEvents() = lifecycleScope.launchWhenStarted {
         viewModel.socketEvent.collect { event ->
-            when(event) {
+            when (event) {
                 is SocketEvent.DrawDataEvent -> {
                     val drawData = event.data
-                    if(!binding.drawingView.isUserDrawing) {
-                        when(drawData.motionEvent){
+                    if (!binding.drawingView.isUserDrawing) {
+                        when (drawData.motionEvent) {
                             MotionEvent.ACTION_DOWN -> binding.drawingView.startedTouchExternally(
                                 drawData
                             )
@@ -331,7 +344,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
                     binding.drawingView.undo()
                 }
                 is SocketEvent.GameErrorEvent -> {
-                    when(event.data.errorType) {
+                    when (event.data.errorType) {
                         GameError.ERROR_ROOM_NOT_FOUND -> finish()
                     }
                 }
@@ -342,7 +355,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
 
     private fun listenToConnectionEvents() = lifecycleScope.launchWhenStarted {
         viewModel.connectionEvent.collect { event ->
-            when(event) {
+            when (event) {
                 is WebSocket.Event.OnConnectionOpened<*> -> {
                     viewModel.sendBaseModel(
                         JoinRoomHandshake(
@@ -403,7 +416,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if(toggle.onOptionsItemSelected(item)) {
+        if (toggle.onOptionsItemSelected(item)) {
             return true
         }
         return super.onOptionsItemSelected(item)
@@ -411,7 +424,7 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
 
     //Use this instead of overriding onStop because this is not called when permissions are requested
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
-    private fun onAppInBackground(){
+    private fun onAppInBackground() {
         viewModel.disconnect()
     }
 
@@ -422,5 +435,40 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
                 finish()
             }
         }.show(supportFragmentManager, null)
+    }
+
+    private fun hasRecordAudioPermission() = EasyPermissions.hasPermissions(
+        this,
+        Manifest.permission.RECORD_AUDIO
+    )
+
+    private fun requestRecordAudioPermission() {
+        EasyPermissions.requestPermissions(
+            this,
+            getString(R.string.rationale_record_audio),
+            REQUEST_CODE_RECORD_AUDIO,
+            Manifest.permission.RECORD_AUDIO
+        )
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
+    }
+
+    override fun onPermissionsGranted(requestCode: Int, perms: MutableList<String>) {
+        if (requestCode == REQUEST_CODE_RECORD_AUDIO) {
+            Toast.makeText(this, R.string.speech_to_text_info, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    override fun onPermissionsDenied(requestCode: Int, perms: MutableList<String>) {
+        if (EasyPermissions.somePermissionPermanentlyDenied(this, perms)) {
+            AppSettingsDialog.Builder(this).build().show()
+        }
     }
 }
