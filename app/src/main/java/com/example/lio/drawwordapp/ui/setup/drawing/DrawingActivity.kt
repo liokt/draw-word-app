@@ -413,4 +413,4 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
     private fun onAppInBackground(){
         viewModel.disconnect()
     }
-} w
+}
