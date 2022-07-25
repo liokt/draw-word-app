@@ -48,6 +48,9 @@ class DrawingViewModel @Inject constructor(
     private val _newWords = MutableStateFlow(NewWords(listOf()))
     val newWords: StateFlow<NewWords> = _newWords
 
+    private val _speechToTextEnabled = MutableStateFlow(false)
+    val speechToTextEnabled: StateFlow<Boolean> = _speechToTextEnabled
+
     private val _players = MutableStateFlow<List<PlayerData>>(listOf())
     val players: StateFlow<List<PlayerData>> = _players
 
@@ -112,6 +115,14 @@ class DrawingViewModel @Inject constructor(
 
     fun checkRadioButton(id: Int) {
         _selectColorButtonId.value = id
+    }
+
+    fun startListening() {
+        _speechToTextEnabled.value = true
+    }
+
+    fun stopListening() {
+        _speechToTextEnabled.value = false
     }
 
     private fun observeEvents() {
