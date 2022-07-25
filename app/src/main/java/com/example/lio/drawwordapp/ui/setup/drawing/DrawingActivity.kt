@@ -22,6 +22,7 @@ import com.example.lio.drawwordapp.adapters.PlayerAdapter
 import com.example.lio.drawwordapp.data.remote.ws.Room
 import com.example.lio.drawwordapp.data.remote.ws.models.*
 import com.example.lio.drawwordapp.databinding.ActivityDrawingBinding
+import com.example.lio.drawwordapp.ui.dialogs.LeaveDialog
 import com.example.lio.drawwordapp.ui.setup.drawing.DrawingViewModel.*
 import com.example.lio.drawwordapp.util.Constants
 import com.example.lio.drawwordapp.util.hideKeyboard
@@ -412,5 +413,14 @@ class DrawingActivity : AppCompatActivity(), LifecycleObserver {
     @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
     private fun onAppInBackground(){
         viewModel.disconnect()
+    }
+
+    override fun onBackPressed() {
+        LeaveDialog().apply {
+            setPositiveClickListener {
+                viewModel.disconnect()
+                finish()
+            }
+        }.show(supportFragmentManager, null)
     }
 }
