@@ -12,7 +12,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.GravityCompat
 import androidx.core.view.isVisible
 import androidx.drawerlayout.widget.DrawerLayout
-import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.*
 import androidx.navigation.navArgs
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -35,7 +35,7 @@ import java.util.*
 import javax.inject.Inject
 
 @AndroidEntryPoint
-class DrawingActivity : AppCompatActivity() {
+class DrawingActivity : AppCompatActivity(), LifecycleObserver {
 
     private lateinit var binding: ActivityDrawingBinding
     private val viewModel: DrawingViewModel by viewModels()
@@ -60,6 +60,7 @@ class DrawingActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityDrawingBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(this)
         subscribeToUIStateUpdates()
         listenToConnectionEvents()
         listenToSocketEvents()
@@ -406,4 +407,10 @@ class DrawingActivity : AppCompatActivity() {
         }
         return super.onOptionsItemSelected(item)
     }
-}
+
+    //Use this instead of overriding onStop because this is not called when permissions are requested
+    @OnLifecycleEvent(Lifecycle.Event.ON_STOP)
+    private fun onAppInBackground(){
+        viewModel.disconnect()
+    }
+} w

@@ -28,18 +28,18 @@ class DrawingViewModel @Inject constructor(
     private val drawingApi: DrawingApi,
     private val dispatchers: DispatcherProvider,
     private val gson: Gson
-): ViewModel() {
+) : ViewModel() {
 
     sealed class SocketEvent {
-        data class ChatMessageEvent(val data: ChatMessage): SocketEvent()
-        data class AnnouncementEvent(val data: Announcement): SocketEvent()
-        data class ChosenWordEvent(val data: ChosenWord): SocketEvent()
-        data class GameStateEvent(val data: GameState): SocketEvent()
-        data class DrawDataEvent(val data: DrawData): SocketEvent()
-        data class NewWordsEvent(val data: NewWords): SocketEvent()
-        data class GameErrorEvent(val data: GameError): SocketEvent()
-        data class RoundDrawInfoEvent(val data: List<BaseModel>): SocketEvent()
-        object UndoEvent: SocketEvent()
+        data class ChatMessageEvent(val data: ChatMessage) : SocketEvent()
+        data class AnnouncementEvent(val data: Announcement) : SocketEvent()
+        data class ChosenWordEvent(val data: ChosenWord) : SocketEvent()
+        data class GameStateEvent(val data: GameState) : SocketEvent()
+        data class DrawDataEvent(val data: DrawData) : SocketEvent()
+        data class NewWordsEvent(val data: NewWords) : SocketEvent()
+        data class GameErrorEvent(val data: GameError) : SocketEvent()
+        data class RoundDrawInfoEvent(val data: List<BaseModel>) : SocketEvent()
+        object UndoEvent : SocketEvent()
     }
 
     private val _pathData = MutableStateFlow(Stack<DrawingView.PathData>())
@@ -57,7 +57,7 @@ class DrawingViewModel @Inject constructor(
     private val _phaseTime = MutableStateFlow(0L)
     val phaseTime: StateFlow<Long> = _phaseTime
 
-    private val _gameState = MutableStateFlow(GameState("",""))
+    private val _gameState = MutableStateFlow(GameState("", ""))
     val gameState: StateFlow<GameState> = _gameState
 
     private val _chat = MutableStateFlow<List<BaseModel>>(listOf())
@@ -125,7 +125,7 @@ class DrawingViewModel @Inject constructor(
     private fun observeBaseModels() {
         viewModelScope.launch(dispatchers.io) {
             drawingApi.observeBaseModels().collect { data ->
-                when(data) {
+                when (data) {
                     is DrawData -> {
                         socketsEventChannel.send(SocketEvent.DrawDataEvent(data))
                     }
@@ -143,7 +143,7 @@ class DrawingViewModel @Inject constructor(
                         socketsEventChannel.send(SocketEvent.NewWordsEvent(data))
                     }
                     is DrawAction -> {
-                        when(data.action) {
+                        when (data.action) {
                             ACTION_UNDO -> socketsEventChannel.send((SocketEvent.UndoEvent))
                         }
                     }
@@ -151,7 +151,7 @@ class DrawingViewModel @Inject constructor(
                         val drawActions = mutableListOf<BaseModel>()
                         data.data.forEach { drawAction ->
                             val jsonObject = JsonParser.parseString(drawAction).asJsonObject
-                            val type = when(jsonObject.get("type").asString) {
+                            val type = when (jsonObject.get("type").asString) {
                                 TYPE_DRAW_DATA -> DrawData::class.java
                                 TYPE_DRAW_ACTION -> DrawAction::class.java
                                 else -> BaseModel::class.java
@@ -173,7 +173,7 @@ class DrawingViewModel @Inject constructor(
                             _phase.value = data
                         }
                         _phaseTime.value = data.time
-                        if(data.phase != Room.Phase.WAITING_FOR_PLAYERS) {
+                        if (data.phase != Room.Phase.WAITING_FOR_PLAYERS) {
                             setTimer(data.time)
                         }
                     }
@@ -182,6 +182,10 @@ class DrawingViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    fun disconnect() {
+        sendBaseModel(DisconnectRequest())
     }
 
     fun chooseWord(word: String, roomName: String) {
