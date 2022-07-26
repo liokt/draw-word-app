@@ -71,13 +71,6 @@ object AppModule {
 
     @Singleton
     @Provides
-    fun provideSetupRepository(
-        setupApi: SetupApi,
-        @ApplicationContext context: Context
-    ): SetupRepository = DefaultSetupRepository(setupApi, context)
-
-    @Singleton
-    @Provides
     fun provideApplicationContext(
         @ApplicationContext context: Context
     ) = context
@@ -86,38 +79,6 @@ object AppModule {
     @Provides
     fun provideGsonInstance(): Gson {
         return Gson()
-    }
-
-    @Singleton
-    @Provides
-    fun provideDrawingApi(
-        app: Application,
-        okHttpClient: OkHttpClient,
-        gson: Gson
-    ): DrawingApi {
-        return Scarlet.Builder()
-            .backoffStrategy(LinearBackoffStrategy(RECONNECT_INTERVAL))
-            .lifecycle(AndroidLifecycle.ofApplicationForeground(app))
-            .webSocketFactory(
-                okHttpClient.newWebSocketFactory(
-                    if (USE_LOCALHOST) WS_BASE_URL_LOCALHOST else WS_BASE_URL
-                )
-            )
-            .addStreamAdapterFactory(FlowStreamAdapter.Factory)
-            .addMessageAdapterFactory(CustomGsonMessageAdapter.Factory(gson))
-            .build()
-            .create()
-    }
-
-    @Singleton
-    @Provides
-    fun provideSetupApi(okHttpClient: OkHttpClient): SetupApi {
-        return Retrofit.Builder()
-            .baseUrl(if (USE_LOCALHOST) HTTP_BASE_URL_LOCALHOST else HTTP_BASE_URL)
-            .addConverterFactory(GsonConverterFactory.create())
-            .client(okHttpClient)
-            .build()
-            .create(SetupApi::class.java)
     }
 
     @Singleton
